@@ -114,7 +114,13 @@
       const len = Number(res.headers.get('content-length') ?? 0);
       bytes = Number.isFinite(len) && len > 0 ? len : null;
 
-      if (res.ok && (contentType.includes('android') || (bytes ?? 0) > 1024 * 1024)) {
+      // Readiness is "the manifest parsed AND the file is really there".
+      // It deliberately does NOT depend on the Content-Type or a size floor:
+      // Vercel serves `.apk` with an empty/`octet-stream` type unless vercel.json
+      // overrides it, and the first successful build came in under 1 MiB while
+      // still being a complete signed package. Those heuristics reported
+      // "BUILD IN PROGRESS" for a perfectly downloadable APK.
+      if (res.ok && bytes != null) {
         status = 'ready';
       } else if (res.ok) {
         status = 'building';
