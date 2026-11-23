@@ -1,0 +1,23 @@
+{
+  "channel": "stable",
+  "product": "DERMA-SHIELD",
+  "appId": "com.dermashield.bio",
+  "version": "1.0.0",
+  "versionCode": 1,
+  "apk": "/releases/dermashield-release.apk",
+  "checksum": "/releases/dermashield-release.apk.sha256",
+  "minSdk": 24,
+  "targetSdk": 35,
+  "sizeBytes": null,
+  "sha256": null,
+  "builtAt": null,
+  "runNumber": null,
+  "commit": null,
+  "notes": [
+    "Offline photobiology kernel bundled — no network required for dosing math",
+    "Native lux / barometer / rotation-vector sensor bridge",
+    "PIN-locked IndexedDB lesion vault with AES-GCM at rest",
+    "Four-theme glass UI with WebGL2 epidermal scattering"
+  ],
+  "buildPipeline": "https://github.com/kennedy-blip/derma-shield/actions/workflows/build-and-bundle-apk.yml"
+}

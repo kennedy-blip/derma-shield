@@ -1,0 +1,269 @@
+# DERMA-SHIELD · off-device Android build
+# -----------------------------------------------------------------------------
+# Turns the same `dist/` bundle Vercel serves into a signed, installable APK and
+# commits it into `static/releases/`, which is the *only* release channel the
+# SvelteKit static adapter publishes (the old workflow wrote to `public/`, which
+# adapter-static never copies — that is why the Download Centre only ever saw a
+# 404).
+#
+# Why CI: the authoring sandbox has no JDK, no Android SDK and no route to
+# dl.google.com / adoptium, so a Gradle build can only happen here.
+#
+# Trigger map
+#   push to main (code)     → build + commit APK + publish GitHub Release
+#   push to main ([apk-bot]) → skip (the commit-back would otherwise loop)
+#   pull request            → build only, no commit, no release
+#   workflow_dispatch       → build + commit + release, optional tag
+name: Build & Bundle APK
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'static/**'
+      - 'android/**'
+      - 'capacitor.config.json'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/build-and-bundle-apk.yml'
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'static/**'
+      - 'android/**'
+      - 'capacitor.config.json'
+      - 'package.json'
+      - '.github/workflows/build-and-bundle-apk.yml'
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Optional tag to attach the APK to (default apk-<run_number>)'
+        required: false
+        type: string
+
+concurrency:
+  group: apk-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+env:
+  NODE_VERSION: '22'
+  JAVA_VERSION: '21'
+  GRADLE_VERSION: '8.9'
+  # Keep in lockstep with android/app/build.gradle.kts defaultConfig.
+  APK_NAME: dermashield-release.apk
+
+jobs:
+  build-apk:
+    name: Web bundle → Capacitor → signed APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Skip the bot's own commit-back
+        id: guard
+        run: |
+          if [[ "${{ github.event.head_commit.message }}" == *"[apk-bot]"* ]]; then
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "Commit-back detected — nothing to rebuild."
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout
+        if: steps.guard.outputs.run == 'true'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Node
+        if: steps.guard.outputs.run == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Set up JDK
+        if: steps.guard.outputs.run == 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Set up Android SDK
+        if: steps.guard.outputs.run == 'true'
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platforms;android-35;build-tools;35.0.0'
+
+      - name: Set up Gradle
+        if: steps.guard.outputs.run == 'true'
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: ${{ env.GRADLE_VERSION }}
+
+      - name: Install dependencies
+        if: steps.guard.outputs.run == 'true'
+        run: npm ci
+
+      - name: Verify zero TypeScript
+        if: steps.guard.outputs.run == 'true'
+        run: |
+          set -euo pipefail
+          matches=$(git ls-files | grep -E '\.(ts|tsx)$|(^|/)tsconfig\.json$' || true)
+          if [ -n "$matches" ]; then
+            echo "::error::TypeScript artefacts found:"
+            echo "$matches"
+            exit 1
+          fi
+          echo "Zero TypeScript files."
+
+      - name: Build web bundle
+        if: steps.guard.outputs.run == 'true'
+        run: npm run build
+
+      - name: Guard against a missing build
+        if: steps.guard.outputs.run == 'true'
+        run: |
+          test -f dist/index.html || { echo '::error::dist/index.html missing'; exit 1; }
+          du -sh dist
+
+      - name: Python kernel self-test (parity gate)
+        if: steps.guard.outputs.run == 'true'
+        run: python3 python_photobiology/selftest.py
+
+      - name: Sync Capacitor
+        if: steps.guard.outputs.run == 'true'
+        run: npx cap sync android
+
+      - name: Stamp the build number into the APK
+        if: steps.guard.outputs.run == 'true'
+        run: |
+          set -euo pipefail
+          CODE=${{ github.run_number }}
+          NAME="1.0.0"
+          # versionCode must increase monotonically for in-place upgrades, so the
+          # CI run number is the authoritative source. Bump NAME by hand for a
+          # human-facing release.
+          sed -i -E "s/versionCode = [0-9]+/versionCode = ${CODE}/" \
+            android/app/build.gradle.kts
+          sed -i -E "s/versionName = \"[^\"]+\"/versionName = \"${NAME}\"/" \
+            android/app/build.gradle.kts
+          grep -E 'versionCode =|versionName =' android/app/build.gradle.kts
+
+      - name: Bundle the signed release APK
+        if: steps.guard.outputs.run == 'true'
+        id: gradle
+        working-directory: android
+        run: |
+          set -euo pipefail
+          chmod +x ./gradlew
+          ./gradlew assembleRelease --no-daemon --stacktrace
+          APK=$(find app/build/outputs/apk/release -name '*.apk' | head -n 1)
+          test -n "$APK" || { echo '::error::no APK produced'; exit 1; }
+          echo "apk_path=android/$APK" >> "$GITHUB_OUTPUT"
+
+      - name: Verify the APK is signed and well-formed
+        if: steps.guard.outputs.run == 'true'
+        run: |
+          set -euo pipefail
+          APK="${{ steps.gradle.outputs.apk_path }}"
+          ls -lh "$APK"
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)
+          # An unsigned APK fails `apksigner verify`; this gate is what guarantees
+          # the download button never serves a file Android refuses to install.
+          "$BT/apksigner" verify --print-certs "$APK"
+          "$BT/aapt2" dump badging "$APK" | head -n 12
+
+      - name: Copy the APK into the static release channel
+        if: steps.guard.outputs.run == 'true'
+        id: stage
+        run: |
+          set -euo pipefail
+          APK="${{ steps.gradle.outputs.apk_path }}"
+          OUT="static/releases/${APK_NAME}"
+          mkdir -p static/releases
+          cp "$APK" "$OUT"
+          SHA=$(sha256sum "$OUT" | cut -d' ' -f1)
+          BYTES=$(stat -c%s "$OUT")
+          echo "$SHA  ${APK_NAME}" > "static/releases/${APK_NAME}.sha256"
+          {
+            echo "sha=$SHA"
+            echo "bytes=$BYTES"
+          } >> "$GITHUB_OUTPUT"
+          echo "APK ${BYTES} bytes · sha256 ${SHA}"
+
+      # The manifest is the single source of truth the Download Centre renders
+      # (version, byte size, sha256), so it is stamped from the APK that was just
+      # built. `jq` ships on GitHub-hosted runners; no interpolation into source.
+      - name: Update the release manifest
+        if: steps.guard.outputs.run == 'true'
+        run: |
+          set -euo pipefail
+          # Defensive: never depend on the workflow-level env reaching this step.
+          APK_NAME="${APK_NAME:-dermashield-release.apk}"
+          MANIFEST=static/releases/release-manifest.json
+          jq \
+            --arg version "1.0.0" \
+            --argjson code "${{ github.run_number }}" \
+            --argjson bytes "${{ steps.stage.outputs.bytes }}" \
+            --arg sha "${{ steps.stage.outputs.sha }}" \
+            --arg builtAt "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --arg commit "${{ github.sha }}" \
+            --arg apk "/releases/${APK_NAME}" \
+            --arg checksum "/releases/${APK_NAME}.sha256" \
+            '.version = $version
+             | .versionCode = $code
+             | .runNumber = $code
+             | .sizeBytes = $bytes
+             | .sha256 = $sha
+             | .builtAt = $builtAt
+             | .commit = $commit
+             | .apk = $apk
+             | .checksum = $checksum' \
+            "$MANIFEST" > "${RUNNER_TEMP}/manifest.json"
+          mv "${RUNNER_TEMP}/manifest.json" "$MANIFEST"
+          jq -e '.sizeBytes > 0 and (.sha256 | length) == 64' "$MANIFEST"
+          cat "$MANIFEST"
+
+      - name: Upload APK artifact
+        if: steps.guard.outputs.run == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: dermashield-release-apk
+          path: |
+            static/releases/${{ env.APK_NAME }}
+            static/releases/${{ env.APK_NAME }}.sha256
+            static/releases/release-manifest.json
+          retention-days: 30
+
+      - name: Publish to GitHub Releases
+        if: steps.guard.outputs.run == 'true' && github.event_name != 'pull_request'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.release_tag || format('apk-{0}', github.run_number) }}
+          name: DERMA-SHIELD APK ${{ github.run_number }}
+          files: |
+            static/releases/${{ env.APK_NAME }}
+            static/releases/${{ env.APK_NAME }}.sha256
+          generate_release_notes: true
+
+      - name: Commit the APK back into the release channel
+        if: steps.guard.outputs.run == 'true' && github.event_name != 'pull_request'
+        run: |
+          set -euo pipefail
+          git add static/releases
+          if git diff --cached --quiet; then
+            echo "Release channel already up to date."
+            exit 0
+          fi
+          git config user.name "dermashield-bot"
+          git config user.email "bot@dermashield.bio"
+          # [apk-bot] is the loop guard for this workflow; it is intentionally NOT
+          # [skip ci], because this commit changes the deployed site (the APK URL
+          # and manifest are served from static/) and must redeploy on Vercel.
+          git commit -m "chore(release): APK build #${{ github.run_number }} [apk-bot]"
+          git push
