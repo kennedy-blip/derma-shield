@@ -68,13 +68,17 @@ android {
         }
     }
 
+    // These MUST stay at 21: `capacitor.build.gradle` is applied at the bottom of
+    // this file and sets the app module's compileOptions to Java 21. Kotlin 2.0
+    // fails the build outright when compileDebugJavaWithJavac (21) and
+    // compileDebugKotlin (17) disagree, so the JVM target is pinned to match.
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
 
     kotlinOptions {
-        jvmTarget = "17"
+        jvmTarget = "21"
     }
 
     buildFeatures {

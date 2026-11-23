@@ -232,7 +232,8 @@
     return () => detach();
   });
 
-  void showOverlay;
+  // `showOverlay` is bound in the template (line ~247) as well as read by
+  // renderOverlay(), so it is already reactive; no `void` escape hatch needed.
 </script>
 
 <div class="grid g-main">
