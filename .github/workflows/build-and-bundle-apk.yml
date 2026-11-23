@@ -110,13 +110,13 @@ jobs:
         if: steps.guard.outputs.run == 'true'
         uses: android-actions/setup-android@v4
         with:
-          # One sdkmanager package path per line. `;` separates path segments
-          # inside a package id, it is not a list separator — passing
-          # 'platforms;android-35;build-tools;35.0.0' asks sdkmanager for a
-          # single nonexistent package and the step dies.
-          packages: |
-            platforms;android-35
-            build-tools;35.0.0
+          # The action splits this input on SPACES (setup-android src/main.ts
+          # does `.split(' ')`), and `;` is the path separator *inside* a
+          # sdkmanager package id. So one package path per space-separated word:
+          #   platforms;android-35  +  build-tools;35.0.0
+          # Semicolon-joining all four segments, or newline-separating them, both
+          # produce a single nonexistent package and the step dies.
+          packages: 'platforms;android-35 build-tools;35.0.0'
 
       - name: Set up Gradle
         if: steps.guard.outputs.run == 'true'
