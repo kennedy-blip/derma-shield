@@ -1,0 +1,19 @@
+{
+  "name": "DERMA-SHIELD Photobiology Optics",
+  "short_name": "DermaShield",
+  "description": "Optical ITA melanin & erythema scanner, solar UV vs vitamin D3 dosimeter, ABCDE morphometry caliper and sunscreen photostability auditor.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#06070E",
+  "theme_color": "#06070E",
+  "categories": ["health", "medical", "utilities"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

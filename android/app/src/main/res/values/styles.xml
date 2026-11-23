@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  DERMA-SHIELD · splash / launch theme.
+
+  `Theme.SplashScreen` (androidx.core:core-splashscreen) refuses to install on
+  API 24–25, so the launch theme inherits from the platform theme and paints the
+  obsidian background directly. The first frame of the WebView is the real
+  splash: the radial gradient in `drawable/splash.xml`.
+-->
+<resources>
+    <style name="AppTheme" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="android:background">#06070E</item>
+        <item name="android:statusBarColor">#06070E</item>
+        <item name="android:navigationBarColor">#06070E</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+
+    <style name="AppTheme.NoActionBarLaunch" parent="AppTheme">
+        <item name="android:background">@drawable/splash</item>
+        <item name="android:statusBarColor">#06070E</item>
+        <item name="android:windowBackground">@drawable/splash</item>
+    </style>
+</resources>

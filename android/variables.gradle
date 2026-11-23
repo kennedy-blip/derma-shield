@@ -1,0 +1,29 @@
+// DERMA-SHIELD · shared build variables
+//
+// Applied from the root `build.gradle.kts`. Every value here lands in
+// `rootProject.ext` and is inherited by the app module plus the Capacitor
+// library modules (capacitor-android, capacitor-haptics, haptics, cordova).
+//
+// minSdk 24 is the floor for the two native plugins: camera2 torch control and
+// the TYPE_ROTATION_VECTOR clinometer. targetSdk 35 is required by Google Play
+// for new uploads since August 2025.
+ext {
+    minSdkVersion = 24
+    compileSdkVersion = 35
+    targetSdkVersion = 35
+
+    // Must equal the `org.jetbrains.kotlin.android` version in build.gradle.kts.
+    kotlin_version = '2.0.21'
+
+    androidxActivityVersion = '1.9.3'
+    androidxAppCompatVersion = '1.7.0'
+    androidxCoordinatorLayoutVersion = '1.2.0'
+    androidxCoreVersion = '1.13.1'
+    androidxFragmentVersion = '1.8.5'
+    coreSplashScreenVersion = '1.0.1'
+    androidxWebkitVersion = '1.12.1'
+    junitVersion = '4.13.2'
+    androidxJunitVersion = '1.2.1'
+    androidxEspressoCoreVersion = '3.6.1'
+    cordovaAndroidVersion = '10.1.1'
+}

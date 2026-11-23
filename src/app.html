@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en" data-theme="obsidian" data-gpu="high">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="%sveltekit.assets%/favicon.svg" type="image/svg+xml" />
+    <link rel="manifest" href="%sveltekit.assets%/manifest.webmanifest" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5" />
+    <meta name="theme-color" content="#06070E" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta
+      name="description"
+      content="DERMA-SHIELD — optical ITA° melanin & erythema scanner, ABCDE lesion morphometry caliper, solar UV burn vs. vitamin D3 dosimeter and sunscreen photostability auditor. 100% offline-first clinical optics."
+    />
+    <title>DERMA-SHIELD · Photobiology Optics Station</title>
+    <script>
+      // Paint the stored theme before first frame to avoid a glass flash.
+      try {
+        const t = localStorage.getItem('ds.theme');
+        if (t) document.documentElement.dataset.theme = t;
+        const g = localStorage.getItem('ds.gpu');
+        if (g) document.documentElement.dataset.gpu = g;
+      } catch (e) {
+        /* private mode */
+      }
+    </script>
+    %sveltekit.head%
+  </head>
+  <body data-sveltekit-preload-data="hover">
+    <div class="boot-shield" aria-hidden="true">
+      <div class="boot-prism"></div>
+      <div class="boot-text">DERMA-SHIELD · CALIBRATING OPTICS</div>
+    </div>
+    <div style="display: contents">%sveltekit.body%</div>
+    <noscript>
+      <div style="padding: 32px; font-family: system-ui">
+        DERMA-SHIELD needs JavaScript for WebGL2 dermal scattering and IndexedDB vault encryption.
+      </div>
+    </noscript>
+  </body>
+</html>

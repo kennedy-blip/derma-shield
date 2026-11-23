@@ -1,0 +1,20 @@
+{
+  "appId": "com.dermashield.bio",
+  "appName": "DermaShield",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "android": {
+    "allowMixedContent": false,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": false,
+    "backgroundColor": "#06070E",
+    "initialFocus": false,
+    "useLegacyBridge": false
+  },
+  "server": {
+    "androidScheme": "https",
+    "hostname": "localhost",
+    "iosScheme": "capacitor",
+    "cleartext": false
+  }
+}

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  DERMA-SHIELD · legacy launcher icon for API 24–25.
+
+  `adaptive-icon` only exists from API 26, so the `mipmap-anydpi-v26` variant
+  cannot be resolved on the minSdk (24) devices. This flattened layer-list is the
+  fallback that makes `@mipmap/ic_launcher` resolve at every API level.
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@drawable/ic_launcher_background" />
+    <item android:drawable="@drawable/ic_launcher_foreground" />
+</layer-list>

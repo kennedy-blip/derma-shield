@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  DERMA-SHIELD · adaptive launcher icon (foreground layer)
+
+  The 108×108 dp canvas is drawn inside a 72 dp safe zone so launcher masks —
+  circle, squircle, teardrop — never clip the mark:
+
+    · outer hexagonal shield outline  → the "shield" of the product name
+    · inner spectral arc (24 → 10 µm) → epidermal  +  UV chromophore band
+    · three dots under the arc       → melanin / haemoglobin / hydration read
+
+  Pure vector: no PNG density buckets to keep in sync, ~1 kB at any dpi.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- shield body -->
+    <path
+        android:fillColor="#0F2A33"
+        android:strokeColor="#6FE3D2"
+        android:strokeWidth="2.4"
+        android:strokeLineJoin="round"
+        android:pathData="M54,26 L73,35 L73,55 C73,65 64,73 54,78 C44,73 35,65 35,55 L35,35 Z" />
+
+    <!-- spectral arc: UV at the outside, visible red at the centre -->
+    <path
+        android:strokeColor="#8B5CF6"
+        android:strokeWidth="2.2"
+        android:strokeLineCap="round"
+        android:pathData="M42,57 A12,12 0 0 1 66,57" />
+    <path
+        android:strokeColor="#38BDF8"
+        android:strokeWidth="2.2"
+        android:strokeLineCap="round"
+        android:pathData="M45,60 A9,9 0 0 1 63,60" />
+    <path
+        android:strokeColor="#F97316"
+        android:strokeWidth="2.2"
+        android:strokeLineCap="round"
+        android:pathData="M48,63 A6,6 0 0 1 60,63" />
+
+    <!-- chromophore read-out -->
+    <path
+        android:fillColor="#6FE3D2"
+        android:pathData="M48,69 m-1.9,0 a1.9,1.9 0 1,0 3.8,0 a1.9,1.9 0 1,0 -3.8,0" />
+    <path
+        android:fillColor="#F97316"
+        android:pathData="M54,69 m-1.9,0 a1.9,1.9 0 1,0 3.8,0 a1.9,1.9 0 1,0 -3.8,0" />
+    <path
+        android:fillColor="#38BDF8"
+        android:pathData="M60,69 m-1.9,0 a1.9,1.9 0 1,0 3.8,0 a1.9,1.9 0 1,0 -3.8,0" />
+</vector>

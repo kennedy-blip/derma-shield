@@ -1,0 +1,39 @@
+{
+  "name": "derma-shield",
+  "version": "1.0.0",
+  "private": true,
+  "description": "DERMA-SHIELD — Optical ITA° melanin & erythema scanner, ABCDE lesion morphometry caliper, solar UV burn vs. vitamin D3 dosimeter and sunscreen photostability auditor. Svelte + JavaScript + Python 3.12 + Kotlin + GLSL. Zero TypeScript.",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "dev": "vite dev --host 0.0.0.0",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "check": "svelte-kit sync && node scripts/audit-typescript.mjs",
+    "audit:typescript": "node scripts/audit-typescript.mjs",
+    "photobiology:selftest": "python3 python_photobiology/selftest.py",
+    "cap:sync": "npm run build && npx cap sync android",
+    "android:add": "npx cap add android",
+    "audit:parity": "node scripts/parity-check.mjs --quick",
+    "audit:all": "node scripts/audit-typescript.mjs && python3 python_photobiology/selftest.py && node scripts/parity-check.mjs --quick && npm run build",
+    "ledger:emit": "node scripts/audit-typescript.mjs --emit",
+    "android:apk": "npm run cap:sync && cd android && ./gradlew assembleRelease"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^7.6.10",
+    "@capacitor/cli": "^7.6.10",
+    "@sveltejs/adapter-static": "^3.0.10",
+    "@sveltejs/kit": "^2.70.4",
+    "@sveltejs/vite-plugin-svelte": "^7.3.1",
+    "svelte": "^5.59.1",
+    "vite": "^8.3.8"
+  },
+  "dependencies": {
+    "@capacitor/core": "^7.6.10",
+    "@capacitor/haptics": "^7.0.0",
+    "qrcode-generator": "^2.0.4"
+  }
+}
